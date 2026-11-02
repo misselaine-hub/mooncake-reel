@@ -17,6 +17,7 @@
     background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     line-height:1.6; -webkit-font-smoothing:antialiased;
+    overflow-wrap:break-word;
   }
   .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 64px}
 
@@ -32,6 +33,7 @@
   .tag{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px}
 
   .layout{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:32px;align-items:start}
+  .layout>*{min-width:0}   /* grid items default to min-width:auto -> long text blows out the column */
 
   /* player */
   .player-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:sticky;top:20px}
@@ -61,11 +63,13 @@
   .shot.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
   .shot .tc{font-size:12px;color:var(--gold);font-variant-numeric:tabular-nums;padding-top:2px}
   .shot .tc span{display:block;color:var(--muted);font-size:11px}
+  .shot .body{min-width:0}
   .shot .body strong{display:block;font-size:14px;margin-bottom:4px}
   .shot .body p{margin:0;font-size:13.5px;color:var(--muted)}
   .shot .body p.cap{color:#d8ccb8;margin-top:6px;font-style:italic}
 
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:34px}
+  .cols>*{min-width:0}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
   .card h3{margin:0 0 10px;font-size:14px;color:var(--gold)}
   .card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
@@ -74,7 +78,7 @@
 
   pre.srt{
     background:#0e0c0a;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
-    overflow:auto;max-height:230px;font-size:12px;color:var(--muted);margin:0;
+    overflow:auto;max-width:100%;max-height:230px;font-size:12px;color:var(--muted);margin:0;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
 
@@ -221,13 +225,15 @@ const fmt = t => {
   return m + ":" + (s<10?"0":"") + s.toFixed(1);
 };
 
-v.addEventListener("timeupdate", ()=>{
+function sync(){
+  if (!v.duration) return;
   fill.style.width = (v.currentTime / v.duration * 100) + "%";
   cur.textContent = fmt(v.currentTime);
   let act = -1;
   SHOTS.forEach((sh,i)=>{ if (v.currentTime >= sh.s && v.currentTime < sh.e) act = i; });
   box.querySelectorAll(".shot").forEach((el,i)=> el.classList.toggle("active", i===act));
-});
+}
+["timeupdate","seeked","loadedmetadata","progress"].forEach(ev => v.addEventListener(ev, sync));
 v.addEventListener("play",  ()=> playBtn.textContent = "❚❚ Pause");
 v.addEventListener("pause", ()=> playBtn.textContent = "▶ Play");
 playBtn.onclick = ()=> v.paused ? v.play() : v.pause();
